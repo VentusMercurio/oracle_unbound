@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class OneCardDraw extends StatelessWidget {
-  const OneCardDraw({super.key});
+class OneCardDrawScreen extends StatelessWidget {
+  const OneCardDrawScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -11,8 +11,8 @@ class OneCardDraw extends StatelessWidget {
       ),
       body: const Center(
         child: Text(
-          'Your card will appear here...',
-          style: TextStyle(fontSize: 22),
+          'This is the One Card Draw screen.',
+          style: TextStyle(fontSize: 20),
         ),
       ),
     );
