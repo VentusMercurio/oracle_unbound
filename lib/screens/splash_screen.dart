@@ -34,6 +34,11 @@ class SplashScreen extends StatelessWidget {
                     // Future: Navigator.pushNamed(context, '/misc');
                   },
                 ),
+                const SizedBox(height: 12),
+                FeatureButton(
+                  label: 'Zodiac Master', // 🔮 NEW BUTTON
+                  onTap: () => Navigator.pushNamed(context, '/zodiac'),
+                ),
               ],
             ),
           ),
@@ -47,7 +52,7 @@ class SplashScreen extends StatelessWidget {
                   backgroundColor: Colors.deepPurpleAccent,
                 ),
                 onPressed: () {
-                  Navigator.pushNamed(context, '/card'); // 🔮 Now routes to OneCardDrawScreen
+                  Navigator.pushNamed(context, '/card'); // 🔮 Routes to OneCardDrawScreen
                 },
                 child: const Text(
                   'Enter the Oracle',
