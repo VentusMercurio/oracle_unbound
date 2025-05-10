@@ -1,41 +1,27 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacementNamed(context, '/main');
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.black, Colors.deepPurple],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      backgroundColor: Colors.deepPurple.shade900,
+      body: Center(
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            backgroundColor: Colors.deepPurpleAccent,
           ),
-        ),
-        child: const Center(
-          child: Text(
-            'Oracle Unbound',
+          onPressed: () {
+            Navigator.pushNamed(context, '/draw');
+          },
+          child: const Text(
+            'Enter the Oracle',
             style: TextStyle(
-              fontSize: 32,
-              color: Colors.white,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
-              letterSpacing: 2,
+              color: Colors.white,
             ),
           ),
         ),
