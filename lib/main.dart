@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '/screens/splash_screen.dart';
 import '/screens/sigil_generator.dart';
 import '/screens/one_card_draw.dart';
-import '/screens/zodiac_master_screen.dart'; // 👈 Add this import
+import '/screens/zodiac_master_screen.dart';
 
 void main() {
   runApp(const OracleUnboundApp());
@@ -29,8 +29,8 @@ class OracleUnboundApp extends StatelessWidget {
       routes: {
         '/': (context) => const SplashScreen(),
         '/draw': (context) => const SigilGeneratorScreen(),
-        '/card': (context) => const OneCardDrawScreen(),
-        '/zodiac': (context) => const ZodiacMasterScreen(), // 👈 New route added
+        '/card': (context) => const OneCardDraw(), // ✅ FIXED: was OneCardDrawScreen
+        '/zodiac': (context) => const ZodiacMasterScreen(),
       },
     );
   }
