@@ -1,54 +1,52 @@
 // lib/screens/splash_screen.dart
 import 'package:flutter/material.dart';
-// ✅ Import your AstrologyService and the global instance from main.dart
+// Import your AstrologyService and the global instance from main.dart
 import '../services/astrology_service.dart'; // Adjust path if your services folder is elsewhere
-import '../main.dart';                       // This is where 'astrologyService' instance is defined
+import '../main.dart'; // This is where 'astrologyService' instance is defined
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
-  // ✅ Method to perform the astrology test calculations
+  // Method to perform the astrology test calculations (Sun/Moon for current time)
   Future<void> _performAstrologyTest() async {
     print("SplashScreen: Astrology Test button tapped.");
 
     if (!astrologyService.isInitialized) {
-      print("SplashScreen: AstrologyService is not initialized. Test cannot run.");
-      // Optionally, you could try to call astrologyService.initSweph() here again,
-      // but it should have been initialized in main.dart.
-      // This usually indicates a problem during the initial startup.
+      print(
+        "SplashScreen: AstrologyService is not initialized. Test cannot run.",
+      );
       return;
     }
 
-    print("SplashScreen: --- Testing Astrology Calculations ---");
-    DateTime testDateTime = DateTime.now(); // Use current date and time for the test
+    print("SplashScreen: --- Testing Quick Sun/Moon Calculations ---");
+    DateTime testDateTime = DateTime.now();
 
-    print("SplashScreen: Calculating for: $testDateTime (local), which is ${testDateTime.toUtc()} (UTC)");
+    print(
+      "SplashScreen: Calculating for: $testDateTime (local), which is ${testDateTime.toUtc()} (UTC)",
+    );
 
-    Map<String, dynamic>? sunInfo = await astrologyService.getSunPosition(testDateTime);
+    Map<String, dynamic>? sunInfo = await astrologyService.getSunPosition(
+      testDateTime,
+    );
     if (sunInfo != null) {
-      print('SplashScreen: --- Sun Position ---');
+      print('SplashScreen: --- Sun Position (Quick Test) ---');
       print('  Longitude: ${sunInfo['longitude']?.toStringAsFixed(4)}°');
-      print('  Latitude: ${sunInfo['latitude']?.toStringAsFixed(4)}°');
-      print('  Distance (AU): ${sunInfo['distance_au']?.toStringAsFixed(4)}');
-      print('  Speed Longitude (°/day): ${sunInfo['speed_longitude_per_day']?.toStringAsFixed(4)}');
-      // You can add more fields here if needed, e.g., speeds for lat/dist
-      print('  Julian Day (UT) used for calc: ${sunInfo['julian_day_ut']}');
+      // ... other sun info if desired ...
     } else {
-      print('SplashScreen: Failed to get Sun position for $testDateTime.');
+      print('SplashScreen: Failed to get Sun position (Quick Test).');
     }
 
-    Map<String, dynamic>? moonInfo = await astrologyService.getMoonPosition(testDateTime);
+    Map<String, dynamic>? moonInfo = await astrologyService.getMoonPosition(
+      testDateTime,
+    );
     if (moonInfo != null) {
-      print('SplashScreen: --- Moon Position ---');
+      print('SplashScreen: --- Moon Position (Quick Test) ---');
       print('  Longitude: ${moonInfo['longitude']?.toStringAsFixed(4)}°');
-      print('  Latitude: ${moonInfo['latitude']?.toStringAsFixed(4)}°');
-      print('  Distance (AU): ${moonInfo['distance_au']?.toStringAsFixed(4)}');
-      print('  Speed Longitude (°/day): ${moonInfo['speed_longitude_per_day']?.toStringAsFixed(4)}');
-      print('  Julian Day (UT) used for calc: ${moonInfo['julian_day_ut']}');
+      // ... other moon info if desired ...
     } else {
-      print('SplashScreen: Failed to get Moon position for $testDateTime.');
+      print('SplashScreen: Failed to get Moon position (Quick Test).');
     }
-    print("SplashScreen: --- End Astrology Test ---");
+    print("SplashScreen: --- End Quick Sun/Moon Test ---");
   }
 
   @override
@@ -59,7 +57,8 @@ class SplashScreen extends StatelessWidget {
         children: [
           // 🔹 Side tab with feature buttons
           Container(
-            width: 120,
+            width:
+                120, // Adjusted width slightly for potentially longer button text
             color: Colors.deepPurple.shade800,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -70,17 +69,27 @@ class SplashScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 FeatureButton(
-                  label: 'Astrology Test', // ✅ Changed label for clarity
+                  label: 'Natal Chart', // ✅ NEW/REPURPOSED BUTTON
                   onTap: () {
-                    _performAstrologyTest(); // ✅ Call the test method
-                    // Future: Navigator.pushNamed(context, '/astrology_input_screen');
+                    Navigator.pushNamed(
+                      context,
+                      '/natal_input',
+                    ); // ✅ Navigate to input screen
                   },
                 ),
                 const SizedBox(height: 12),
                 FeatureButton(
-                  label: 'Misc',
+                  label: 'Astrology Test', // ✅ Kept your quick test button
+                  onTap: () {
+                    _performAstrologyTest(); // Calls the local sun/moon test
+                  },
+                ),
+                const SizedBox(height: 12),
+                FeatureButton(
+                  label: 'Misc', // Example, if you have other features
                   onTap: () {
                     // Future: Navigator.pushNamed(context, '/misc');
+                    print("Misc button tapped - no route defined yet.");
                   },
                 ),
                 const SizedBox(height: 12),
@@ -88,29 +97,44 @@ class SplashScreen extends StatelessWidget {
                   label: 'Zodiac Master',
                   onTap: () => Navigator.pushNamed(context, '/zodiac'),
                 ),
+                const SizedBox(height: 12),
+                FeatureButton(
+                  label:
+                      'One Card Draw', // ✅ Added this back, assuming it's linked to '/card'
+                  onTap: () => Navigator.pushNamed(context, '/card'),
+                ),
               ],
             ),
           ),
 
-          // 🔸 Main content
+          // 🔸 Main content (Enter the Oracle button now removed, assuming features are on side)
+          // If you still want the "Enter the Oracle" button to go to a specific screen (e.g. '/card'),
+          // you can add it back here. For now, I'm assuming the side buttons are the primary navigation.
           Expanded(
             child: Center(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  backgroundColor: Colors.deepPurpleAccent,
-                ),
-                onPressed: () {
-                  Navigator.pushNamed(context, '/card');
-                },
-                child: const Text(
-                  'Enter the Oracle',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+              child: Column(
+                // Added a Column for centering text or future elements
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Text(
+                    'Oracle Unbound',
+                    style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurpleAccent,
+                      letterSpacing: 2.0,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 10.0,
+                          color: Colors.black,
+                          offset: Offset(2.0, 2.0),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  SizedBox(height: 20),
+                  // You could add an image or more descriptive text here
+                ],
               ),
             ),
           ),
@@ -124,11 +148,7 @@ class FeatureButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const FeatureButton({
-    super.key,
-    required this.label,
-    required this.onTap,
-  });
+  const FeatureButton({super.key, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -137,10 +157,17 @@ class FeatureButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.deepPurpleAccent,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        minimumSize: const Size(
+          100,
+          40,
+        ), // Ensure buttons have a decent tap area
       ),
       child: Text(
         label,
-        style: const TextStyle(fontSize: 14, color: Colors.white),
+        style: const TextStyle(
+          fontSize: 13,
+          color: Colors.white,
+        ), // Slightly smaller for more text
         textAlign: TextAlign.center,
       ),
     );

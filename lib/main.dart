@@ -1,28 +1,33 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'services/astrology_service.dart'; // 👈 Import your AstrologyService
-import 'screens/splash_screen.dart';     // 👈 Ensure correct path if screens are in lib/screens/
-import 'screens/sigil_generator.dart';  // 👈 Ensure correct path
-import 'screens/one_card_draw.dart';     // 👈 Ensure correct path
+import 'screens/splash_screen.dart'; // 👈 Ensure correct path if screens are in lib/screens/
+import 'screens/sigil_generator.dart'; // 👈 Ensure correct path
+import 'screens/one_card_draw.dart'; // 👈 Ensure correct path
 import 'screens/zodiac_master_screen.dart'; // 👈 Ensure correct path
+import 'screens/natal_chart_input_screen.dart'; // Import the new screen
 
 // ✅ Create a global instance of your AstrologyService
 // This makes it accessible throughout your app.
 // For larger apps, you might consider a service locator like GetIt or Provider.
 final AstrologyService astrologyService = AstrologyService();
 
-void main() async { // ✅ Changed to async to allow await for initialization
+void main() async {
+  // ✅ Changed to async to allow await for initialization
   // ✅ CRUCIAL: Ensure Flutter bindings are initialized before using plugins
   // or doing async operations before runApp.
   WidgetsFlutterBinding.ensureInitialized();
 
   print("Oracle Unbound: Main - Initializing AstrologyService...");
-  bool initSuccess = await astrologyService.initSweph(); // ✅ Await the initialization
+  bool initSuccess =
+      await astrologyService.initSweph(); // ✅ Await the initialization
 
   if (initSuccess) {
     print("Oracle Unbound: Main - AstrologyService initialized successfully.");
   } else {
-    print("Oracle Unbound: Main - AstrologyService FAILED to initialize. Astrology features may not work.");
+    print(
+      "Oracle Unbound: Main - AstrologyService FAILED to initialize. Astrology features may not work.",
+    );
     // In a production app, you might want to show an error to the user
     // or disable features that depend on this service.
   }
@@ -42,7 +47,9 @@ class OracleUnboundApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.black,
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepPurpleAccent, // Ensure this provides enough contrast or consider foregroundColor: Colors.white
+            backgroundColor:
+                Colors
+                    .deepPurpleAccent, // Ensure this provides enough contrast or consider foregroundColor: Colors.white
           ),
         ),
       ),
@@ -55,6 +62,8 @@ class OracleUnboundApp extends StatelessWidget {
         '/draw': (context) => const SigilGeneratorScreen(),
         '/card': (context) => const OneCardDraw(),
         '/zodiac': (context) => const ZodiacMasterScreen(),
+        '/natal_input':
+            (context) => const NatalChartInputScreen(), // ✅ ADD THIS ROUTE
         // Example for a future natal chart screen:
         // '/natal_chart_input': (context) => const NatalChartInputScreen(),
       },
