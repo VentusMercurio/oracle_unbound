@@ -1,7 +1,55 @@
+// lib/screens/splash_screen.dart
 import 'package:flutter/material.dart';
+// ✅ Import your AstrologyService and the global instance from main.dart
+import '../services/astrology_service.dart'; // Adjust path if your services folder is elsewhere
+import '../main.dart';                       // This is where 'astrologyService' instance is defined
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
+
+  // ✅ Method to perform the astrology test calculations
+  Future<void> _performAstrologyTest() async {
+    print("SplashScreen: Astrology Test button tapped.");
+
+    if (!astrologyService.isInitialized) {
+      print("SplashScreen: AstrologyService is not initialized. Test cannot run.");
+      // Optionally, you could try to call astrologyService.initSweph() here again,
+      // but it should have been initialized in main.dart.
+      // This usually indicates a problem during the initial startup.
+      return;
+    }
+
+    print("SplashScreen: --- Testing Astrology Calculations ---");
+    DateTime testDateTime = DateTime.now(); // Use current date and time for the test
+
+    print("SplashScreen: Calculating for: $testDateTime (local), which is ${testDateTime.toUtc()} (UTC)");
+
+    Map<String, dynamic>? sunInfo = await astrologyService.getSunPosition(testDateTime);
+    if (sunInfo != null) {
+      print('SplashScreen: --- Sun Position ---');
+      print('  Longitude: ${sunInfo['longitude']?.toStringAsFixed(4)}°');
+      print('  Latitude: ${sunInfo['latitude']?.toStringAsFixed(4)}°');
+      print('  Distance (AU): ${sunInfo['distance_au']?.toStringAsFixed(4)}');
+      print('  Speed Longitude (°/day): ${sunInfo['speed_longitude_per_day']?.toStringAsFixed(4)}');
+      // You can add more fields here if needed, e.g., speeds for lat/dist
+      print('  Julian Day (UT) used for calc: ${sunInfo['julian_day_ut']}');
+    } else {
+      print('SplashScreen: Failed to get Sun position for $testDateTime.');
+    }
+
+    Map<String, dynamic>? moonInfo = await astrologyService.getMoonPosition(testDateTime);
+    if (moonInfo != null) {
+      print('SplashScreen: --- Moon Position ---');
+      print('  Longitude: ${moonInfo['longitude']?.toStringAsFixed(4)}°');
+      print('  Latitude: ${moonInfo['latitude']?.toStringAsFixed(4)}°');
+      print('  Distance (AU): ${moonInfo['distance_au']?.toStringAsFixed(4)}');
+      print('  Speed Longitude (°/day): ${moonInfo['speed_longitude_per_day']?.toStringAsFixed(4)}');
+      print('  Julian Day (UT) used for calc: ${moonInfo['julian_day_ut']}');
+    } else {
+      print('SplashScreen: Failed to get Moon position for $testDateTime.');
+    }
+    print("SplashScreen: --- End Astrology Test ---");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +70,10 @@ class SplashScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 FeatureButton(
-                  label: 'Astrology',
+                  label: 'Astrology Test', // ✅ Changed label for clarity
                   onTap: () {
-                    // Future: Navigator.pushNamed(context, '/astrology');
+                    _performAstrologyTest(); // ✅ Call the test method
+                    // Future: Navigator.pushNamed(context, '/astrology_input_screen');
                   },
                 ),
                 const SizedBox(height: 12),
@@ -36,7 +85,7 @@ class SplashScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 FeatureButton(
-                  label: 'Zodiac Master', // 🔮 NEW BUTTON
+                  label: 'Zodiac Master',
                   onTap: () => Navigator.pushNamed(context, '/zodiac'),
                 ),
               ],
@@ -52,7 +101,7 @@ class SplashScreen extends StatelessWidget {
                   backgroundColor: Colors.deepPurpleAccent,
                 ),
                 onPressed: () {
-                  Navigator.pushNamed(context, '/card'); // 🔮 Routes to OneCardDrawScreen
+                  Navigator.pushNamed(context, '/card');
                 },
                 child: const Text(
                   'Enter the Oracle',

@@ -30,6 +30,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  sweph:
+    git:
+      url: https://github.com/vm75/sweph.dart.git
+      ref: main # Using the main branch of the sweph repo
+
+  # Add other essential dependencies if not already there
+  path_provider: ^2.1.3 # Or latest compatible for file system paths
   uuid: ^3.0.7
 
   # The following adds the Cupertino Icons font to your application.
@@ -39,6 +46,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+    
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -52,11 +60,14 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  uses-material-design: true
+  assets:
+    - assets/ephe/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
-  uses-material-design: true
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:
