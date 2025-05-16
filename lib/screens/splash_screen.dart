@@ -117,7 +117,7 @@ class SplashScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
                   Text(
-                    'Oracle Unbound',
+                    'The Oracle Unbound',
                     style: TextStyle(
                       fontSize: 36,
                       fontWeight: FontWeight.bold,

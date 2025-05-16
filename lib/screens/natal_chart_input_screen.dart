@@ -1,11 +1,10 @@
 // lib/screens/natal_chart_input_screen.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // For date/time formatting, add to pubspec.yaml
+import 'package:intl/intl.dart';
 
-// Import your AstrologyService and the global instance from main.dart
 import '../services/astrology_service.dart';
 import '../main.dart'; // Where 'astrologyService' is defined
-import '../models/natal_chart_models.dart'; // To potentially navigate to a display screen
+import '../models/natal_chart_models.dart';
 
 class NatalChartInputScreen extends StatefulWidget {
   const NatalChartInputScreen({super.key});
@@ -15,30 +14,28 @@ class NatalChartInputScreen extends StatefulWidget {
 }
 
 class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
-  // Controllers for text fields
   final _dateController = TextEditingController();
   final _timeController = TextEditingController();
   final _latitudeController = TextEditingController();
   final _longitudeController = TextEditingController();
-  // final _timezoneController = TextEditingController(); // For later
+  final _timezoneController =
+      TextEditingController(); // ✅ NEW: Controller for timezone
 
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
 
   bool _isLoading = false;
-
-  // For displaying results (optional, could navigate to new screen)
   String _results = "";
 
   @override
   void initState() {
     super.initState();
-    // Pre-fill with some test data to speed up testing
-    _dateController.text = "1990-07-15"; // YYYY-MM-DD
-    _timeController.text = "14:30"; // HH:MM (24-hour)
-    _latitudeController.text = "34.0522"; // Los Angeles Latitude
-    _longitudeController.text = "-118.2437"; // Los Angeles Longitude
-    // _timezoneController.text = "America/Los_Angeles"; // For later
+    _dateController.text = "1990-07-15";
+    _timeController.text = "14:30";
+    _latitudeController.text = "34.0522";
+    _longitudeController.text = "-118.2437";
+    _timezoneController.text =
+        "America/Los_Angeles"; // ✅ NEW: Pre-fill timezone (IANA format)
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -64,10 +61,7 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
     if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
-        // ignore: use_build_context_synchronously
-        _timeController.text = picked.format(
-          context,
-        ); // Uses locale-specific format
+        _timeController.text = picked.format(context);
       });
     }
   }
@@ -76,9 +70,11 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
     if (_dateController.text.isEmpty ||
         _timeController.text.isEmpty ||
         _latitudeController.text.isEmpty ||
-        _longitudeController.text.isEmpty) {
+        _longitudeController.text.isEmpty ||
+        _timezoneController.text.isEmpty) {
+      // ✅ MODIFIED: Check timezone field
       setState(() {
-        _results = "Please fill in all fields.";
+        _results = "Please fill in all fields, including Timezone.";
       });
       return;
     }
@@ -89,7 +85,6 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
     });
 
     try {
-      // --- Parsing Date ---
       DateTime? parsedDate;
       try {
         parsedDate = DateFormat('yyyy-MM-dd').parseStrict(_dateController.text);
@@ -101,14 +96,15 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
         return;
       }
 
-      // --- Parsing Time ---
-      // This is a bit tricky as TimeOfDay.format(context) can be locale specific.
-      // For simplicity, we'll parse HH:MM. A more robust solution might be needed.
       TimeOfDay? parsedTime;
       final timeParts = _timeController.text.split(':');
       if (timeParts.length == 2) {
         final hour = int.tryParse(timeParts[0]);
-        final minute = int.tryParse(timeParts[1]);
+        final minutePart =
+            timeParts[1].split(
+              ' ',
+            )[0]; // Handle cases like "14:30 AM/PM" if picker adds it
+        final minute = int.tryParse(minutePart);
         if (hour != null &&
             minute != null &&
             hour >= 0 &&
@@ -120,7 +116,7 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
       }
       if (parsedTime == null) {
         setState(() {
-          _results = "Invalid Time Format. Use HH:MM (24-hour).";
+          _results = "Invalid Time Format. Use HH:MM (24-hour) or picker.";
           _isLoading = false;
         });
         return;
@@ -136,7 +132,8 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
 
       final double? latitude = double.tryParse(_latitudeController.text);
       final double? longitude = double.tryParse(_longitudeController.text);
-      // final String timezone = _timezoneController.text; // For later
+      final String timezoneLocationName =
+          _timezoneController.text.trim(); // ✅ NEW: Get timezone string
 
       if (latitude == null || longitude == null) {
         setState(() {
@@ -145,37 +142,51 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
         });
         return;
       }
+      if (timezoneLocationName.isEmpty) {
+        // ✅ NEW: Basic check for timezone
+        setState(() {
+          _results = "Timezone cannot be empty.";
+          _isLoading = false;
+        });
+        return;
+      }
 
       print(
-        "Input DateTime (Local): $birthDateTime, Lat: $latitude, Lon: $longitude",
+        "Input DateTime (Local): $birthDateTime, Lat: $latitude, Lon: $longitude, TZ: $timezoneLocationName",
       );
 
-      NatalChartDetails?
-      chartDetails = await astrologyService.calculateNatalChart(
-        birthDateTime: birthDateTime, // This is local time
-        latitude: latitude,
-        longitude: longitude,
-        // timezoneLocationName: timezone, // Pass this when ready for robust TZ
-      );
+      NatalChartDetails? chartDetails = await astrologyService
+          .calculateNatalChart(
+            birthDateTime: birthDateTime,
+            latitude: latitude,
+            longitude: longitude,
+            timezoneLocationName:
+                timezoneLocationName, // ✅ MODIFIED: Pass timezone
+          );
 
       if (chartDetails != null) {
         StringBuffer sb = StringBuffer();
         sb.writeln("--- NATAL CHART DETAILS ---");
-        sb.writeln("Birth (Local): $birthDateTime");
-        sb.writeln("Birth (Used UTC): ${chartDetails.birthDateTimeUTC}");
         sb.writeln(
-          "Lat: ${chartDetails.latitude}, Lon: ${chartDetails.longitude}",
+          "Birth (Local Input): ${DateFormat('yyyy-MM-dd HH:mm').format(birthDateTime)} (TZ: $timezoneLocationName)",
+        );
+        sb.writeln(
+          "Birth (Calculated UTC): ${DateFormat('yyyy-MM-dd HH:mm:ss').format(chartDetails.birthDateTimeUTC)} UTC",
+        );
+        sb.writeln(
+          "Lat: ${chartDetails.latitude.toStringAsFixed(4)}, Lon: ${chartDetails.longitude.toStringAsFixed(4)}",
         );
         sb.writeln("\n--- MAJOR POINTS ---");
-        sb.writeln("${chartDetails.ascendant}");
-        sb.writeln("${chartDetails.midheaven}");
+        sb.writeln(chartDetails.ascendant);
+        sb.writeln(chartDetails.midheaven);
         sb.writeln("\n--- PLANETS ---");
         for (var planet in chartDetails.planets) {
           sb.writeln(planet);
         }
         sb.writeln("\n--- HOUSE CUSPS (Placidus) ---");
+        int cuspNum = 1;
         for (var cusp in chartDetails.houseCusps) {
-          sb.writeln(cusp);
+          sb.writeln("${cuspNum++}. ${cusp.formattedPosition}");
         }
         setState(() {
           _results = sb.toString();
@@ -204,7 +215,7 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
     _timeController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
-    // _timezoneController.dispose();
+    _timezoneController.dispose(); // ✅ NEW: Dispose timezone controller
     super.dispose();
   }
 
@@ -220,12 +231,10 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // Date Field
             TextField(
               controller: _dateController,
               decoration: InputDecoration(
                 labelText: 'Birth Date (YYYY-MM-DD)',
-                hintText: 'e.g., 1990-07-15',
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.calendar_today),
                   onPressed: () => _selectDate(context),
@@ -234,13 +243,10 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
               keyboardType: TextInputType.datetime,
             ),
             const SizedBox(height: 16),
-
-            // Time Field
             TextField(
               controller: _timeController,
               decoration: InputDecoration(
                 labelText: 'Birth Time (HH:MM, 24-hour)',
-                hintText: 'e.g., 14:30',
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.access_time),
                   onPressed: () => _selectTime(context),
@@ -249,13 +255,10 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
               keyboardType: TextInputType.datetime,
             ),
             const SizedBox(height: 16),
-
-            // Latitude Field
             TextField(
               controller: _latitudeController,
               decoration: const InputDecoration(
-                labelText: 'Latitude (Decimal Degrees)',
-                hintText: 'e.g., 34.0522',
+                labelText: 'Latitude (e.g., 34.0522)',
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -263,22 +266,28 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Longitude Field
             TextField(
               controller: _longitudeController,
               decoration: const InputDecoration(
-                labelText: 'Longitude (Decimal Degrees)',
-                hintText: 'e.g., -118.2437 (West is negative)',
+                labelText: 'Longitude (e.g., -118.2437)',
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
                 signed: true,
               ),
             ),
+            const SizedBox(height: 16), // ✅ NEW SPACING
+            // ✅ NEW: Timezone Field
+            TextField(
+              controller: _timezoneController,
+              decoration: const InputDecoration(
+                labelText: 'Timezone (e.g., America/Los_Angeles)',
+                hintText: 'IANA Timezone Name',
+              ),
+              keyboardType: TextInputType.text,
+            ),
             const SizedBox(height: 24),
 
-            // Calculate Button
             ElevatedButton(
               onPressed: _isLoading ? null : _calculateAndDisplayChart,
               child:
@@ -295,17 +304,18 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Display Results
             if (_results.isNotEmpty)
               Container(
                 padding: const EdgeInsets.all(12),
-                color: Colors.grey[800],
-                child: Text(
+                color: Colors.grey[800], // Consider a theme-appropriate color
+                child: SelectableText(
+                  // ✅ MODIFIED: Made results selectable for easier copy-pasting
                   _results,
                   style: const TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 12,
-                  ), // Monospace for better alignment
+                    color: Colors.white,
+                  ),
                 ),
               ),
           ],

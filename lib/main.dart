@@ -6,6 +6,9 @@ import 'screens/sigil_generator.dart'; // 👈 Ensure correct path
 import 'screens/one_card_draw.dart'; // 👈 Ensure correct path
 import 'screens/zodiac_master_screen.dart'; // 👈 Ensure correct path
 import 'screens/natal_chart_input_screen.dart'; // Import the new screen
+import 'package:flutter/material.dart';
+import 'package:timezone/data/latest.dart' as tz_data; // Import for data
+import 'package:timezone/timezone.dart' as tz;
 
 // ✅ Create a global instance of your AstrologyService
 // This makes it accessible throughout your app.
@@ -17,6 +20,7 @@ void main() async {
   // ✅ CRUCIAL: Ensure Flutter bindings are initialized before using plugins
   // or doing async operations before runApp.
   WidgetsFlutterBinding.ensureInitialized();
+  tz_data.initializeTimeZones();
 
   print("Oracle Unbound: Main - Initializing AstrologyService...");
   bool initSuccess =

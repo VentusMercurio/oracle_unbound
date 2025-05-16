@@ -1,16 +1,19 @@
 // lib/services/astrology_service.dart
 import 'dart:async';
 import 'dart:io';
-import 'dart:math'; // For PI, sin, cos, atan2 if doing advanced house position logic manually
+import 'dart:math';
 
 import 'package:flutter/services.dart' show ByteData, rootBundle;
 import 'package:path_provider/path_provider.dart';
-import 'package:sweph/sweph.dart'; // Import the sweph package
+import 'package:sweph/sweph.dart';
+import '../models/natal_chart_models.dart';
 
-// ✅ Import your new model classes
-import '../models/natal_chart_models.dart'; // Adjust path if models are elsewhere
+// ✅ ADD THIS IMPORT for package:timezone
+import 'package:timezone/timezone.dart' as tz;
+// Note: Ensure tz.initializeTimeZones(); has been called in main.dart
 
 class AstrologyService {
+  // ... (initState, isInitialized, dateTimeToJulianDay, _formatLongitude, _getHousePlacement, getPlanetPosition, etc. - keep them as they are) ...
   bool _isInitialized = false;
   String _ephePath = '';
 
@@ -84,14 +87,15 @@ class AstrologyService {
   bool get isInitialized => _isInitialized;
 
   double dateTimeToJulianDay(DateTime dateTime) {
-    final utcDateTime = dateTime.toUtc();
-    int year = utcDateTime.year;
-    int month = utcDateTime.month;
-    int day = utcDateTime.day;
-    int hour = utcDateTime.hour;
-    int minute = utcDateTime.minute;
-    int second = utcDateTime.second;
-    double milliseconds = utcDateTime.millisecond / 1000.0;
+    // Ensure this takes a UTC DateTime
+    // final utcDateTime = dateTime.toUtc(); // Already expects UTC
+    int year = dateTime.year;
+    int month = dateTime.month;
+    int day = dateTime.day;
+    int hour = dateTime.hour;
+    int minute = dateTime.minute;
+    int second = dateTime.second;
+    double milliseconds = dateTime.millisecond / 1000.0;
 
     if (month <= 2) {
       year -= 1;
@@ -111,7 +115,6 @@ class AstrologyService {
     return jdDay + jdFraction;
   }
 
-  // ✅ ADDED: Helper function to format longitude into Sign, Degree, and Formatted String
   Map<String, dynamic> _formatLongitude(double longitudeDegrees) {
     final signs = [
       "Aries",
@@ -127,77 +130,50 @@ class AstrologyService {
       "Aquarius",
       "Pisces",
     ];
-
-    // Normalize longitude to be 0 <= lon < 360
     double normalizedLon = longitudeDegrees % 360.0;
-    if (normalizedLon < 0) {
-      normalizedLon += 360.0;
-    }
-
+    if (normalizedLon < 0) normalizedLon += 360.0;
     int signIndex = (normalizedLon / 30.0).floor();
     double degreeInSign = normalizedLon % 30.0;
-
-    int degPart = degreeInSign.floor();
-    double minDecimal = (degreeInSign - degPart) * 60.0;
-    int minPart = minDecimal.floor();
-    // String formattedString = "${degPart.toString().padLeft(2, ' ')}° ${minPart.toString().padLeft(2, '0')}' ${signs[signIndex]}";
     String formattedString =
-        "${degreeInSign.toStringAsFixed(2)}° ${signs[signIndex]}"; // Simpler decimal format
-
+        "${degreeInSign.toStringAsFixed(2)}° ${signs[signIndex]}";
     return {
       'sign': signs[signIndex],
-      'degreeInSign':
-          degreeInSign, // Could return degPart for just whole degrees
+      'degreeInSign': degreeInSign,
       'formattedString': formattedString,
     };
   }
 
-  // ✅ ADDED: Function to determine house placement (can be improved for edge cases/precision)
   int _getHousePlacement(
     double planetLongitude,
     List<AstrologicalPoint> houseCusps,
   ) {
-    if (houseCusps.isEmpty || houseCusps.length < 12)
-      return 0; // Should not happen
-
+    if (houseCusps.isEmpty || houseCusps.length < 12) return 0;
     double planetLon = planetLongitude % 360.0;
     if (planetLon < 0) planetLon += 360.0;
-
     for (int i = 0; i < 12; i++) {
       double cusp1Lon = houseCusps[i].longitude % 360.0;
       if (cusp1Lon < 0) cusp1Lon += 360.0;
-
       double cusp2Lon = houseCusps[(i + 1) % 12].longitude % 360.0;
       if (cusp2Lon < 0) cusp2Lon += 360.0;
-
-      // Handle wrap-around (e.g., 12th house cusp might be 330°, 1st house cusp 20°)
       if (cusp1Lon <= cusp2Lon) {
-        // Normal case, e.g. cusp1=30, cusp2=60
-        if (planetLon >= cusp1Lon && planetLon < cusp2Lon) {
-          return i + 1;
-        }
+        if (planetLon >= cusp1Lon && planetLon < cusp2Lon) return i + 1;
       } else {
-        // Wrap-around case, e.g. cusp1=330 (12th), cusp2=20 (1st)
         if ((planetLon >= cusp1Lon && planetLon < 360.0) ||
-            (planetLon >= 0.0 && planetLon < cusp2Lon)) {
+            (planetLon >= 0.0 && planetLon < cusp2Lon))
           return i + 1;
-        }
       }
     }
-    // Fallback, should ideally not be reached if cusps are correctly ordered
-    // This can happen if planet longitude is exactly on a cusp, depending on strict inequality.
-    // For simplicity, defaulting to 12th if no other house is found.
     print(
       "Warning: Planet house placement fallback for lon $planetLon. Cusps: ${houseCusps.map((c) => c.longitude.toStringAsFixed(2)).toList()}",
     );
     return 12;
   }
 
-  // Existing method, no changes needed here other than type hint for planet
   Future<Map<String, dynamic>?> getPlanetPosition(
     DateTime dateTime,
     HeavenlyBody planet,
   ) async {
+    // ... (this method should be fine as is from previous version) ...
     if (!_isInitialized) {
       print(
         'Sweph (vm75) not initialized in getPlanetPosition. Attempting to initialize...',
@@ -210,6 +186,7 @@ class AstrologyService {
         return null;
       }
     }
+    // Ensure dateTime is UTC for Julian Day calculation
     double julianDayUT = dateTimeToJulianDay(dateTime.toUtc());
     final SwephFlag calculationFlags = SwephFlag(
       SwephFlag.SEFLG_SWIEPH.value | SwephFlag.SEFLG_SPEED.value,
@@ -232,7 +209,7 @@ class AstrologyService {
     } catch (e, s) {
       print(
         'Error in getPlanetPosition for ${Sweph.swe_get_planet_name(planet)}: $e',
-      ); // Use Sweph.swe_get_planet_name
+      );
       print('Stack trace: $s');
       return null;
     }
@@ -246,12 +223,13 @@ class AstrologyService {
     return getPlanetPosition(dateTime, HeavenlyBody.SE_MOON);
   }
 
-  // ✅ NEW METHOD: Calculate Full Natal Chart Details
+  // ✅ MODIFIED: Added timezoneLocationName and timezone conversion logic
   Future<NatalChartDetails?> calculateNatalChart({
-    required DateTime birthDateTime, // User's local birth date and time
+    required DateTime
+    birthDateTime, // This is the LOCAL date and time from user input
     required double latitude,
     required double longitude,
-    // required String timezoneLocationName, // For later robust TZ conversion
+    required String timezoneLocationName, // ✅ NEW PARAMETER
   }) async {
     if (!_isInitialized) {
       print("AstrologyService not initialized. Cannot calculate natal chart.");
@@ -262,38 +240,64 @@ class AstrologyService {
       }
     }
 
-    // --- 1. Convert Local Birth Time to UTC ---
-    // TEMPORARY: Using simple .toUtc(). For production, use 'package:timezone'.
-    DateTime birthDateTimeUTC = birthDateTime.toUtc();
+    // --- 1. Convert Local Birth Time to ACCURATE UTC ---
+    DateTime birthDateTimeUTC;
+    try {
+      // Ensure timezone database is initialized (should be done in main.dart)
+      // tz.initializeTimeZones(); // No, this is tz_data.initializeTimeZones(); in main
+
+      final location = tz.getLocation(timezoneLocationName);
+      final tz.TZDateTime birthDateTimeInTZ = tz.TZDateTime(
+        location,
+        birthDateTime.year,
+        birthDateTime.month,
+        birthDateTime.day,
+        birthDateTime.hour,
+        birthDateTime.minute,
+        birthDateTime.second, // Assuming seconds are 0 if not provided by user
+        birthDateTime.millisecond, // Pass milliseconds too
+      );
+      birthDateTimeUTC = birthDateTimeInTZ.toUtc();
+      print(
+        "Input Local: $birthDateTime, Timezone: $timezoneLocationName -> Accurate UTC: $birthDateTimeUTC",
+      );
+    } catch (e, s) {
+      print(
+        "Error converting to TZDateTime for timezone '$timezoneLocationName': $e",
+      );
+      print(s);
+      print(
+        "Falling back to simple .toUtc() for birthDateTime. Results may be inaccurate for historical dates/DST.",
+      );
+      birthDateTimeUTC = birthDateTime.toUtc(); // Fallback, less accurate
+    }
+
     print(
       "Calculating chart for UTC: $birthDateTimeUTC (Latitude: $latitude, Longitude: $longitude)",
     );
-
-    double julianDayUT = dateTimeToJulianDay(birthDateTimeUTC);
+    double julianDayUT = dateTimeToJulianDay(
+      birthDateTimeUTC,
+    ); // Pass the accurate UTC here
 
     // --- 2. Calculate House Cusps, Ascendant, MC ---
+    // ... (rest of this section remains the same as your correct version)
     HouseCuspData houseData;
     try {
-      // Standard flags for houses: Swiss Ephemeris, geocentric.
-      // Topocentric (SEFLG_TOPOCTR) might be used by some for houses/angles, but geocentric is common.
-      SwephFlag houseCalcFlags = SwephFlag(
-        SwephFlag.SEFLG_SWIEPH.value,
-      ); // Default geo
+      SwephFlag houseCalcFlags = SwephFlag(SwephFlag.SEFLG_SWIEPH.value);
       houseData = Sweph.swe_houses_ex(
         julianDayUT,
         houseCalcFlags,
         latitude,
         longitude,
         Hsys.P,
-      ); // Hsys.P for Placidus
+      );
     } catch (e, s) {
       print("Error calculating houses: $e");
       print(s);
       return null;
     }
 
-    double ascLongitude =
-        houseData.ascmc[AscmcIndex.SE_ASC.index]; // Use enum index for safety
+    double ascLongitude = houseData.ascmc[AscmcIndex.SE_ASC.index];
     double mcLongitude = houseData.ascmc[AscmcIndex.SE_MC.index];
 
     var ascFormatted = _formatLongitude(ascLongitude);
@@ -315,8 +319,6 @@ class AstrologyService {
     );
 
     List<AstrologicalPoint> houseCusps = [];
-    // houseData.cusps array contains 13 doubles for Placidus. cusps[0] is house 1, cusps[1] is house 2, ..., cusps[11] is house 12.
-    // cusps[12] is not used or is identical to cusps[0] for some systems. We need 12 cusps.
     for (int i = 0; i < 12; i++) {
       double cuspLongitude = houseData.cusps[i];
       var cuspFormatted = _formatLongitude(cuspLongitude);
@@ -330,17 +332,16 @@ class AstrologyService {
         ),
       );
     }
-
-    // --- 3. Calculate Planet Positions ---
+    // ... (Planet calculation loop remains the same as your correct version)
     List<HeavenlyBody> bodiesToCalculate = [
-      HeavenlyBody.SE_SUN, HeavenlyBody.SE_MOON, HeavenlyBody.SE_MERCURY,
-      HeavenlyBody.SE_VENUS, HeavenlyBody.SE_MARS, HeavenlyBody.SE_JUPITER,
+      HeavenlyBody.SE_SUN,
+      HeavenlyBody.SE_MOON,
+      HeavenlyBody.SE_MERCURY,
+      HeavenlyBody.SE_VENUS,
+      HeavenlyBody.SE_MARS,
+      HeavenlyBody.SE_JUPITER,
       HeavenlyBody.SE_SATURN,
-      // You can add Uranus, Neptune, Pluto, True Node later:
-      // HeavenlyBody.SE_URANUS, HeavenlyBody.SE_NEPTUNE, HeavenlyBody.SE_PLUTO,
-      // HeavenlyBody.SE_TRUE_NODE,
     ];
-
     List<AstrologicalPoint> planets = [];
     final SwephFlag planetCalcFlags = SwephFlag(
       SwephFlag.SEFLG_SWIEPH.value | SwephFlag.SEFLG_SPEED.value,
@@ -375,7 +376,6 @@ class AstrologyService {
       } catch (e, s) {
         print("Error calculating ${Sweph.swe_get_planet_name(body)}: $e");
         print(s);
-        // Add a placeholder to maintain list structure if a planet calculation fails
         var errorFormatted = _formatLongitude(0);
         planets.add(
           AstrologicalPoint(

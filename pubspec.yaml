@@ -30,6 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  timezone: ^0.9.3 
   sweph:
     git:
       url: https://github.com/vm75/sweph.dart.git
