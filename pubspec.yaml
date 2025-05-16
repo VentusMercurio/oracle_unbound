@@ -32,7 +32,9 @@ dependencies:
     sdk: flutter
   google_fonts: ^6.2.1
   video_player: ^2.8.6
+  geocoding: ^3.0.0
   timezone: ^0.9.3 
+  http: ^1.2.0
   sweph:
     git:
       url: https://github.com/vm75/sweph.dart.git
