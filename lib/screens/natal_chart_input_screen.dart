@@ -2,8 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+// ✅ Import the new display screen
+import 'natal_chart_display_screen.dart';
+
 import '../services/astrology_service.dart';
 import '../main.dart'; // Where 'astrologyService' is defined
+// NatalChartDetails is now imported via natal_chart_display_screen.dart if it imports natal_chart_models.dart
+// or directly if you keep the import here:
 import '../models/natal_chart_models.dart';
 
 class NatalChartInputScreen extends StatefulWidget {
@@ -18,24 +23,23 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
   final _timeController = TextEditingController();
   final _latitudeController = TextEditingController();
   final _longitudeController = TextEditingController();
-  final _timezoneController =
-      TextEditingController(); // ✅ NEW: Controller for timezone
+  final _timezoneController = TextEditingController();
 
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
 
   bool _isLoading = false;
-  String _results = "";
+  // String _results = ""; // ✅ REMOVED - We navigate instead
 
   @override
   void initState() {
     super.initState();
-    _dateController.text = "1990-07-15";
-    _timeController.text = "14:30";
-    _latitudeController.text = "34.0522";
-    _longitudeController.text = "-118.2437";
-    _timezoneController.text =
-        "America/Los_Angeles"; // ✅ NEW: Pre-fill timezone (IANA format)
+    // Pre-fill with some test data to speed up testing
+    _dateController.text = "1990-07-15"; // YYYY-MM-DD
+    _timeController.text = "14:30"; // HH:MM (24-hour)
+    _latitudeController.text = "34.0522"; // Los Angeles Latitude
+    _longitudeController.text = "-118.2437"; // Los Angeles Longitude
+    _timezoneController.text = "America/Los_Angeles";
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -43,7 +47,9 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
       context: context,
       initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(1900),
-      lastDate: DateTime(2101),
+      lastDate: DateTime.now().add(
+        const Duration(days: 365),
+      ), // Allow dates up to 1 year in future
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {
@@ -61,7 +67,9 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
     if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
-        _timeController.text = picked.format(context);
+        // Use a consistent format for parsing later
+        _timeController.text =
+            "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
       });
     }
   }
@@ -72,16 +80,16 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
         _latitudeController.text.isEmpty ||
         _longitudeController.text.isEmpty ||
         _timezoneController.text.isEmpty) {
-      // ✅ MODIFIED: Check timezone field
-      setState(() {
-        _results = "Please fill in all fields, including Timezone.";
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill in all fields, including Timezone.'),
+        ),
+      );
       return;
     }
 
     setState(() {
       _isLoading = true;
-      _results = "Calculating...";
     });
 
     try {
@@ -89,8 +97,11 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
       try {
         parsedDate = DateFormat('yyyy-MM-dd').parseStrict(_dateController.text);
       } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid Date Format. Use YYYY-MM-DD.')),
+        );
         setState(() {
-          _results = "Invalid Date Format. Use YYYY-MM-DD.";
           _isLoading = false;
         });
         return;
@@ -100,11 +111,9 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
       final timeParts = _timeController.text.split(':');
       if (timeParts.length == 2) {
         final hour = int.tryParse(timeParts[0]);
-        final minutePart =
-            timeParts[1].split(
-              ' ',
-            )[0]; // Handle cases like "14:30 AM/PM" if picker adds it
-        final minute = int.tryParse(minutePart);
+        final minute = int.tryParse(
+          timeParts[1],
+        ); // Assuming HH:MM format from _selectTime
         if (hour != null &&
             minute != null &&
             hour >= 0 &&
@@ -115,8 +124,13 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
         }
       }
       if (parsedTime == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invalid Time Format. Use HH:MM (24-hour).'),
+          ),
+        );
         setState(() {
-          _results = "Invalid Time Format. Use HH:MM (24-hour) or picker.";
           _isLoading = false;
         });
         return;
@@ -129,23 +143,26 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
         parsedTime.hour,
         parsedTime.minute,
       );
-
       final double? latitude = double.tryParse(_latitudeController.text);
       final double? longitude = double.tryParse(_longitudeController.text);
-      final String timezoneLocationName =
-          _timezoneController.text.trim(); // ✅ NEW: Get timezone string
+      final String timezoneLocationName = _timezoneController.text.trim();
 
       if (latitude == null || longitude == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid Latitude or Longitude.')),
+        );
         setState(() {
-          _results = "Invalid Latitude or Longitude.";
           _isLoading = false;
         });
         return;
       }
       if (timezoneLocationName.isEmpty) {
-        // ✅ NEW: Basic check for timezone
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Timezone cannot be empty.')),
+        );
         setState(() {
-          _results = "Timezone cannot be empty.";
           _isLoading = false;
         });
         return;
@@ -160,52 +177,42 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
             birthDateTime: birthDateTime,
             latitude: latitude,
             longitude: longitude,
-            timezoneLocationName:
-                timezoneLocationName, // ✅ MODIFIED: Pass timezone
+            timezoneLocationName: timezoneLocationName,
           );
 
-      if (chartDetails != null) {
-        StringBuffer sb = StringBuffer();
-        sb.writeln("--- NATAL CHART DETAILS ---");
-        sb.writeln(
-          "Birth (Local Input): ${DateFormat('yyyy-MM-dd HH:mm').format(birthDateTime)} (TZ: $timezoneLocationName)",
-        );
-        sb.writeln(
-          "Birth (Calculated UTC): ${DateFormat('yyyy-MM-dd HH:mm:ss').format(chartDetails.birthDateTimeUTC)} UTC",
-        );
-        sb.writeln(
-          "Lat: ${chartDetails.latitude.toStringAsFixed(4)}, Lon: ${chartDetails.longitude.toStringAsFixed(4)}",
-        );
-        sb.writeln("\n--- MAJOR POINTS ---");
-        sb.writeln(chartDetails.ascendant);
-        sb.writeln(chartDetails.midheaven);
-        sb.writeln("\n--- PLANETS ---");
-        for (var planet in chartDetails.planets) {
-          sb.writeln(planet);
-        }
-        sb.writeln("\n--- HOUSE CUSPS (Placidus) ---");
-        int cuspNum = 1;
-        for (var cusp in chartDetails.houseCusps) {
-          sb.writeln("${cuspNum++}. ${cusp.formattedPosition}");
-        }
-        setState(() {
-          _results = sb.toString();
-        });
-      } else {
-        setState(() {
-          _results =
-              "Failed to calculate natal chart details. Check console for errors.";
-        });
-      }
-    } catch (e, s) {
-      print("Error in UI calculate: $e \n$s");
-      setState(() {
-        _results = "An error occurred: $e";
-      });
-    } finally {
       setState(() {
         _isLoading = false;
       });
+
+      if (chartDetails != null) {
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) =>
+                    NatalChartDisplayScreen(chartDetails: chartDetails),
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Failed to calculate natal chart details. Check console for errors.',
+            ),
+          ),
+        );
+      }
+    } catch (e, s) {
+      print("Error in UI _calculateAndDisplayChart: $e \n$s");
+      setState(() {
+        _isLoading = false;
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An unexpected error occurred: $e')),
+      );
     }
   }
 
@@ -215,7 +222,7 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
     _timeController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
-    _timezoneController.dispose(); // ✅ NEW: Dispose timezone controller
+    _timezoneController.dispose();
     super.dispose();
   }
 
@@ -224,7 +231,8 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Natal Chart Input'),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor:
+            Colors.deepPurple, // Or Theme.of(context).colorScheme.primary
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -241,6 +249,8 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
                 ),
               ),
               keyboardType: TextInputType.datetime,
+              readOnly: true, // Make it read-only if using picker exclusively
+              onTap: () => _selectDate(context), // Also open picker on tap
             ),
             const SizedBox(height: 16),
             TextField(
@@ -253,6 +263,8 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
                 ),
               ),
               keyboardType: TextInputType.datetime,
+              readOnly: true, // Make it read-only if using picker exclusively
+              onTap: () => _selectTime(context), // Also open picker on tap
             ),
             const SizedBox(height: 16),
             TextField(
@@ -276,8 +288,7 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
                 signed: true,
               ),
             ),
-            const SizedBox(height: 16), // ✅ NEW SPACING
-            // ✅ NEW: Timezone Field
+            const SizedBox(height: 16),
             TextField(
               controller: _timezoneController,
               decoration: const InputDecoration(
@@ -287,7 +298,6 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
               keyboardType: TextInputType.text,
             ),
             const SizedBox(height: 24),
-
             ElevatedButton(
               onPressed: _isLoading ? null : _calculateAndDisplayChart,
               child:
@@ -302,22 +312,7 @@ class _NatalChartInputScreenState extends State<NatalChartInputScreen> {
                       )
                       : const Text('Calculate Natal Chart'),
             ),
-            const SizedBox(height: 24),
-
-            if (_results.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(12),
-                color: Colors.grey[800], // Consider a theme-appropriate color
-                child: SelectableText(
-                  // ✅ MODIFIED: Made results selectable for easier copy-pasting
-                  _results,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+            // The old _results display Container is removed from here
           ],
         ),
       ),
