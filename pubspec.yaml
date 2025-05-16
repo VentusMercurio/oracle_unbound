@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  google_fonts: ^6.2.1
+  video_player: ^2.8.6
   timezone: ^0.9.3 
   sweph:
     git:
@@ -65,7 +67,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/ephe/
-
+    - assets/videos/
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
