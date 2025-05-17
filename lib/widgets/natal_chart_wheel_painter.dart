@@ -8,6 +8,7 @@ import '../models/natal_chart_models.dart';
 class NatalChartWheelPainter extends CustomPainter {
   final NatalChartDetails chartDetails;
 
+  // ... (TextStyles and Glyph/Color Maps are THE SAME as your provided correct version)
   final TextStyle planetGlyphStyle = GoogleFonts.notoSans(
     fontSize: 18,
     color: Colors.white,
@@ -27,33 +28,29 @@ class NatalChartWheelPainter extends CustomPainter {
     fontWeight: FontWeight.bold,
   );
 
-  // ✅ CORRECTED: Using raw integer values for keys in the const map
   static const Map<int, String> planetGlyphChars = {
-    0: '☉', // HeavenlyBody.SE_SUN
-    1: '☽', // HeavenlyBody.SE_MOON
-    2: '☿', // HeavenlyBody.SE_MERCURY
-    3: '♀', // HeavenlyBody.SE_VENUS
-    4: '♂', // HeavenlyBody.SE_MARS
-    5: '♃', // HeavenlyBody.SE_JUPITER
-    6: '♄', // HeavenlyBody.SE_SATURN
-    7: '♅', // HeavenlyBody.SE_URANUS (Uncomment if you add Uranus)
-    8: '♆', // HeavenlyBody.SE_NEPTUNE (Uncomment if you add Neptune)
-    9: '♇', // HeavenlyBody.SE_PLUTO (Uncomment if you add Pluto)
-    11: '☊', // HeavenlyBody.SE_TRUE_NODE (Uncomment if you add True Node)
+    0: '☉',
+    1: '☽',
+    2: '☿',
+    3: '♀',
+    4: '♂',
+    5: '♃',
+    6: '♄',
+    7: '♅',
+    8: '♆',
+    9: '♇',
+    11: '☊',
   };
 
   static Map<int, Color> getPlanetColors(BuildContext? context) {
-    // Added BuildContext?
-    // Using raw integer values for keys here too for consistency
     return {
-      0: Colors.yellowAccent.shade400, // Sun
-      1: Colors.grey.shade300, // Moon
-      2: Colors.orange.shade300, // Mercury
-      3: Colors.pinkAccent.shade100, // Venus
-      4: Colors.redAccent.shade200, // Mars
-      5: Colors.blueAccent.shade100, // Jupiter
-      6: Colors.brown.shade300, // Saturn
-      // ... colors for other planets
+      0: Colors.yellowAccent.shade400,
+      1: Colors.grey.shade300,
+      2: Colors.orange.shade300,
+      3: Colors.pinkAccent.shade100,
+      4: Colors.redAccent.shade200,
+      5: Colors.blueAccent.shade100,
+      6: Colors.brown.shade300,
     };
   }
 
@@ -96,6 +93,7 @@ class NatalChartWheelPainter extends CustomPainter {
     TextAlign textAlign = TextAlign.center,
     double maxWidth = 200,
   }) {
+    // ... (This helper method is THE SAME as your provided correct version)
     final TextPainter textPainter = TextPainter(
       text: TextSpan(text: text, style: style),
       textAlign: textAlign,
@@ -135,19 +133,53 @@ class NatalChartWheelPainter extends CustomPainter {
     final double centerCircleRadius = zodiacBandInnerRadius * 0.15;
 
     final Paint linePaint = Paint()..style = PaintingStyle.stroke;
-    final Map<int, Color> currentPlanetColors = getPlanetColors(
-      null,
-    ); // Pass null or actual context if needed by getPlanetColors
+    final Map<int, Color> currentPlanetColors = getPlanetColors(null);
 
     // --- 1. Draw Outer Zodiac Ring & Sign Glyphs/Divisions ---
-    linePaint.strokeWidth = zodiacBandOuterRadius - zodiacBandInnerRadius;
-    linePaint.color = Colors.blueGrey.shade900.withOpacity(0.6);
-    canvas.drawCircle(
-      Offset(centerX, centerY),
-      (zodiacBandOuterRadius + zodiacBandInnerRadius) / 2,
-      linePaint,
+
+    // ✅ MODIFIED: Draw Zodiac Band with a SweepGradient
+    final Rect zodiacRect = Rect.fromCircle(
+      center: Offset(centerX, centerY),
+      radius:
+          (zodiacBandOuterRadius + zodiacBandInnerRadius) /
+          2, // Mid-radius of the band
     );
 
+    final Paint gradientPaint =
+        Paint()
+          ..shader = SweepGradient(
+            center:
+                Alignment
+                    .center, // Default, equivalent to Offset(centerX, centerY) in this context
+            // Define your mystical/vibrant colors
+            colors: [
+              Colors.indigo.shade700,
+              Colors.deepPurple.shade700,
+              Colors.pinkAccent.shade400,
+              Colors.purple.shade700,
+              Colors.blue.shade800,
+              Colors.indigo.shade700, // Loop back for smooth sweep
+            ],
+            // Define stops for color transitions (must match length of colors list)
+            stops: const [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+            // Optional: Rotate the gradient if needed
+            // transform: const GradientRotation(math.pi / 2), // Example: rotate by 90 degrees
+          ).createShader(
+            zodiacRect,
+          ); // Create shader based on the band's rectangle
+
+    gradientPaint.style = PaintingStyle.stroke;
+    gradientPaint.strokeWidth =
+        zodiacBandOuterRadius - zodiacBandInnerRadius; // Thickness of the band
+    canvas.drawCircle(
+      Offset(centerX, centerY),
+      (zodiacBandOuterRadius + zodiacBandInnerRadius) / 2, // Draw at mid-radius
+      gradientPaint,
+    );
+    // --- End of Gradient Zodiac Band ---
+
+    // The rest of the drawing for zodiac divisions and glyphs remains the same,
+    // but ensure their colors contrast well with the new gradient background.
     final double signAngleDegrees = 30.0;
     for (int i = 0; i < 12; i++) {
       final double lineAngleRad =
@@ -162,7 +194,10 @@ class NatalChartWheelPainter extends CustomPainter {
               90 -
               chartDetails.ascendant.longitude);
 
-      linePaint.color = Colors.grey.shade700;
+      // Draw division line - make it lighter to show against gradient
+      linePaint.color = Colors.white.withOpacity(
+        0.3,
+      ); // ✅ Light, semi-transparent line
       linePaint.strokeWidth = 0.8;
       canvas.drawLine(
         Offset(
@@ -176,21 +211,30 @@ class NatalChartWheelPainter extends CustomPainter {
         linePaint,
       );
 
+      // Draw Zodiac Sign Glyph - ensure color contrasts with gradient
       _drawText(
         canvas,
         Offset(
-          centerX + (zodiacGlyphRadius * 0.96) * math.cos(glyphAngleRad),
-          centerY + (zodiacGlyphRadius * 0.96) * math.sin(glyphAngleRad),
+          centerX +
+              ((zodiacBandOuterRadius + zodiacBandInnerRadius) / 2) *
+                  math.cos(glyphAngleRad), // Centered in the band
+          centerY +
+              ((zodiacBandOuterRadius + zodiacBandInnerRadius) / 2) *
+                  math.sin(glyphAngleRad),
         ),
         zodiacGlyphChars[i],
+        // ✅ Ensure glyph color is visible on gradient, e.g., brighter white
         zodiacGlyphStyle.copyWith(
-          fontSize: (zodiacBandOuterRadius - zodiacBandInnerRadius) * 0.5,
+          fontSize: (zodiacBandOuterRadius - zodiacBandInnerRadius) * 0.45,
+          color: Colors.white.withOpacity(0.8),
         ),
       );
     }
 
     // --- 2. Draw House Cusp Lines & Numbers ---
-    linePaint.color = Colors.grey.shade600;
+    // (This section is THE SAME as your provided correct version)
+    // ...
+    linePaint.color = Colors.grey.shade600; // Reset color for house lines
     linePaint.strokeWidth = 0.7;
     for (int i = 0; i < 12; i++) {
       double cuspLongitude = chartDetails.houseCusps[i].longitude;
@@ -235,6 +279,8 @@ class NatalChartWheelPainter extends CustomPainter {
     }
 
     // --- 3. Draw ASC/MC Lines (thicker) ---
+    // (This section is THE SAME as your provided correct version)
+    // ...
     linePaint.color = Colors.white.withOpacity(0.9);
     linePaint.strokeWidth = 1.5;
     double ascPlotAngleRad = math.pi / 180 * (-90);
@@ -287,6 +333,8 @@ class NatalChartWheelPainter extends CustomPainter {
     );
 
     // --- 4. Draw Planets with Glyphs, Degrees, and Rx ---
+    // (This section is THE SAME as your provided correct version)
+    // ...
     for (var planetPoint in chartDetails.planets) {
       if (planetPoint.heavenlyBody == null ||
           planetGlyphChars[planetPoint.heavenlyBody!.value] == null)
@@ -332,8 +380,10 @@ class NatalChartWheelPainter extends CustomPainter {
     }
 
     // --- 5. Draw Center Circle ---
+    // (This section is THE SAME as your provided correct version)
+    // ...
     linePaint.style = PaintingStyle.fill;
-    linePaint.color = Colors.black;
+    linePaint.color = Colors.black; // Assuming your chart background is black
     canvas.drawCircle(Offset(centerX, centerY), centerCircleRadius, linePaint);
     linePaint.style = PaintingStyle.stroke;
     linePaint.color = Colors.grey.shade800;
