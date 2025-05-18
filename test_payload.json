@@ -1,0 +1,8 @@
+{
+  "ascendant": {"sign": "Scorpio", "degree": 9.87, "formatted": "9.87° Scorpio"},
+  "midheaven": {"sign": "Leo", "degree": 15.27, "formatted": "15.27° Leo"},
+  "planets": [
+    {"name": "Sun", "sign": "Cancer", "degree": 22.65, "house": 1, "isRetrograde": false, "formatted": "22.65° Cancer"},
+    {"name": "Moon", "sign": "Aquarius", "degree": 0.09, "house": 6, "isRetrograde": false, "formatted": "0.09° Aquarius"}
+  ]
+}
