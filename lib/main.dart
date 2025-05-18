@@ -6,15 +6,18 @@ import 'screens/sigil_generator.dart'; // 👈 Ensure correct path
 import 'screens/one_card_draw.dart'; // 👈 Ensure correct path
 import 'screens/zodiac_master_screen.dart'; // 👈 Ensure correct path
 import 'screens/natal_chart_input_screen.dart'; // Import the new screen
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart'; // Redundant import, already imported above
 import 'package:timezone/data/latest.dart' as tz_data; // Import for data
-import 'package:timezone/timezone.dart' as tz;
+// import 'package:timezone/timezone.dart' as tz; // This specific import might not be directly needed in main.dart if only data is initialized
 import 'screens/three_card_spread_screen.dart'; // ✅
 
 // ✅ Create a global instance of your AstrologyService
 // This makes it accessible throughout your app.
 // For larger apps, you might consider a service locator like GetIt or Provider.
 final AstrologyService astrologyService = AstrologyService();
+
+// ✨✨✨ NEW: Create a RouteObserver instance ✨✨✨
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 void main() async {
   // ✅ Changed to async to allow await for initialization
@@ -52,12 +55,18 @@ class OracleUnboundApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.black,
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor:
-                Colors
-                    .deepPurpleAccent, // Ensure this provides enough contrast or consider foregroundColor: Colors.white
+            backgroundColor: Colors.deepPurpleAccent,
+            // It's good practice to also define foregroundColor for buttons
+            // to ensure text is readable, e.g., foregroundColor: Colors.white,
           ),
         ),
+        // You can add other theme customizations here, like textTheme with GoogleFonts
+        // textTheme: GoogleFonts.cinzelTextTheme(
+        //   Theme.of(context).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white)
+        // ),
       ),
+      // ✨✨✨ NEW: Add the navigatorObserver ✨✨✨
+      navigatorObservers: [routeObserver],
       initialRoute: '/',
       routes: {
         // Assuming your screen files are directly in a 'screens' folder under 'lib'
@@ -71,8 +80,6 @@ class OracleUnboundApp extends StatelessWidget {
         '/zodiac': (context) => const ZodiacMasterScreen(),
         '/natal_input':
             (context) => const NatalChartInputScreen(), // ✅ ADD THIS ROUTE
-        // Example for a future natal chart screen:
-        // '/natal_chart_input': (context) => const NatalChartInputScreen(),
       },
     );
   }

@@ -1,19 +1,108 @@
 // lib/screens/splash_screen.dart
+import 'dart:math'; // For Random
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../widgets/video_background_scaffold.dart'; // ✅ Import the reusable widget
+import '../widgets/video_background_scaffold.dart';
+// Import the routeObserver from main.dart or wherever you define it
+// Assuming main.dart is in the parent directory of lib or accessible
+import '../../main.dart'; // Adjust path if your main.dart is elsewhere
 
-// const String mysticalFontFamily = 'serif'; // No longer needed if using GoogleFonts directly
-
-class SplashScreen extends StatelessWidget {
-  // ✅ Can be StatelessWidget now!
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
-  // No need for initState, dispose, or _videoController here anymore.
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> with RouteAware {
+  //  Tambahkan RouteAware
+  final List<String> _videoAssets = [
+    'assets/videos/intro.mp4',
+    'assets/videos/pink_nebula.mp4',
+    'assets/videos/red_nebula.mp4',
+    // Add more video paths as needed
+  ];
+
+  String? _currentVideoPath;
+  final Random _random = Random();
+
+  @override
+  void initState() {
+    super.initState();
+    // Select an initial video.
+    // No need to call _changeVideo here if didPush will handle it.
+    if (_videoAssets.isNotEmpty) {
+      _currentVideoPath = _videoAssets[_random.nextInt(_videoAssets.length)];
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Subscribe to route changes.
+    // Use ModalRoute.of(context) as PageRoute<dynamic>
+    // or ensure your routeObserver is correctly typed if issues arise.
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      // Check if route is a PageRoute
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this); //  Jangan lupa unsubscribe
+    super.dispose();
+  }
+
+  // Called when the current route has been pushed.
+  @override
+  void didPush() {
+    super.didPush();
+    // This can be a good place for initial video selection if you want it
+    // to potentially change even on the very first load vs. initState.
+    // Or if you want to ensure it runs after dependencies are fully resolved.
+    _selectNewVideo();
+    print("SplashScreen: didPush - Video: $_currentVideoPath");
+  }
+
+  // Called when the top route has been popped off, and the current route shows up.
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // This is when the user returns to this screen.
+    _selectNewVideo();
+    print("SplashScreen: didPopNext - Video: $_currentVideoPath");
+  }
+
+  void _selectNewVideo() {
+    if (_videoAssets.isEmpty) return;
+    if (_videoAssets.length == 1) {
+      if (mounted) {
+        setState(() {
+          _currentVideoPath = _videoAssets.first;
+        });
+      }
+      return;
+    }
+
+    String? previousVideoPath = _currentVideoPath;
+    String newVideoPath;
+
+    do {
+      newVideoPath = _videoAssets[_random.nextInt(_videoAssets.length)];
+    } while (newVideoPath ==
+        previousVideoPath); // Ensure it's a different video
+
+    if (mounted) {
+      setState(() {
+        _currentVideoPath = newVideoPath;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Define your buttons here or pass them in if this widget becomes more generic
     final List<Map<String, dynamic>> featureButtons = [
       {'label': 'Natal Chart', 'route': '/natal_input'},
       {'label': 'Sigil Engine', 'route': '/draw'},
@@ -21,11 +110,19 @@ class SplashScreen extends StatelessWidget {
       {'label': 'Zodiac Master', 'route': '/zodiac'},
     ];
 
+    // Fallback video if something goes wrong or list is initially empty
+    String videoToPlay =
+        _currentVideoPath ??
+        (_videoAssets.isNotEmpty
+            ? _videoAssets.first
+            : 'assets/videos/intro.mp4');
+
     return VideoBackgroundScaffold(
-      // ✅ Use the reusable widget
-      videoAssetPath: 'assets/videos/intro.mp4', // ✅ Pass your video path
+      videoAssetPath: videoToPlay,
+      // Ensure your VideoBackgroundScaffold handles looping correctly internally
+      // and re-initializes the player if videoAssetPath changes.
       child: Row(
-        // This Row is now the child of VideoBackgroundScaffold
+        // ... your existing UI ...
         children: [
           // 🔹 Side tab with feature buttons
           Container(
@@ -111,7 +208,7 @@ class SplashScreen extends StatelessWidget {
   }
 }
 
-// FeatureButton class remains the same (or can be moved to a common widgets file)
+// FeatureButton class remains the same
 class FeatureButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
