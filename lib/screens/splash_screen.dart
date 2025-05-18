@@ -17,7 +17,7 @@ class SplashScreen extends StatelessWidget {
     final List<Map<String, dynamic>> featureButtons = [
       {'label': 'Natal Chart', 'route': '/natal_input'},
       {'label': 'Sigil Engine', 'route': '/draw'},
-      {'label': 'One Card Draw', 'route': '/card'},
+      {'label': 'Three Card Draw', 'route': '/three_card_spread'},
       {'label': 'Zodiac Master', 'route': '/zodiac'},
     ];
 

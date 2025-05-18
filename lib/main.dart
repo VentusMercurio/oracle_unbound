@@ -9,6 +9,7 @@ import 'screens/natal_chart_input_screen.dart'; // Import the new screen
 import 'package:flutter/material.dart';
 import 'package:timezone/data/latest.dart' as tz_data; // Import for data
 import 'package:timezone/timezone.dart' as tz;
+import 'screens/three_card_spread_screen.dart'; // ✅
 
 // ✅ Create a global instance of your AstrologyService
 // This makes it accessible throughout your app.
@@ -65,6 +66,8 @@ class OracleUnboundApp extends StatelessWidget {
         '/': (context) => const SplashScreen(),
         '/draw': (context) => const SigilGeneratorScreen(),
         '/card': (context) => const OneCardDraw(),
+        '/three_card_spread':
+            (context) => const ThreeCardSpreadScreen(), // ✅ Add route
         '/zodiac': (context) => const ZodiacMasterScreen(),
         '/natal_input':
             (context) => const NatalChartInputScreen(), // ✅ ADD THIS ROUTE
